@@ -11,30 +11,40 @@ CORS(app)
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Load model + tokenizer
-model_path = os.path.join(base_dir, "wordsuggestion.keras")
-model = tf.keras.models.load_model(model_path)
-
-tokenizer_path = os.path.join(base_dir, "word-suggestion-tokenizer.pkl")
-with open(tokenizer_path, "rb") as f:
-    tokenizer = pickle.load(f)
-
+# Global lazy variables
+model = None
+tokenizer = None
+index_to_word = None
 MAXLEN = 200
-index_to_word = tokenizer.index_word
 
+def load_model_and_tokenizer():
+    global model, tokenizer, index_to_word
+
+    if model is None or tokenizer is None:
+        print("🔄 Loading model and tokenizer...")
+        model_path = os.path.join(base_dir, "wordsuggestion.keras")
+        tokenizer_path = os.path.join(base_dir, "word-suggestion-tokenizer.pkl")
+
+        model = tf.keras.models.load_model(model_path)
+        with open(tokenizer_path, "rb") as f:
+            tokenizer = pickle.load(f)
+
+        index_to_word = tokenizer.index_word
+        print("✅ Model & Tokenizer loaded.")
 
 def predict_next_words(text, n=3):
+    load_model_and_tokenizer()  # ensure lazy load happens only when needed
+
     seq = tokenizer.texts_to_sequences([text])[0]
     seq = pad_sequences([seq], maxlen=MAXLEN-1, padding="pre")
 
     pred = model.predict(seq, verbose=0)[0]
-    print("Prediction vector:", pred[:10])  # show first 10 probabilities
+    print("Prediction vector:", pred[:10])  # Debug: first 10 probs
 
     top_indices = pred.argsort()[-n:][::-1]
     print("Top indices:", top_indices)
 
     return [index_to_word[i] for i in top_indices if i in index_to_word]
-
 
 @app.route("/")
 def home():
