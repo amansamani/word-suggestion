@@ -23,7 +23,7 @@ def load_model_and_tokenizer():
     if model is None or tokenizer is None:
         print("🔄 Loading model and tokenizer...")
         model_path = os.path.join(base_dir, "wordsuggestion.keras")
-        tokenizer_path = os.path.join(base_dir, "word-suggestion-tokenizer.pkl")
+        tokenizer_path = os.path.join(base_dir, "tokenizer.pkl")
 
         model = tf.keras.models.load_model(model_path)
         with open(tokenizer_path, "rb") as f:
